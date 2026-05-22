@@ -377,7 +377,7 @@ const Admin = () => {
     : allBookings.filter(b => b.status === bookingFilter.toLowerCase());
 
   return (
-    <div className="admin-dashboard-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0a0a1a' }}>
+    <div className="admin-dashboard-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100vh', paddingTop: '80px', background: '#0a0a1a' }}>
       
       {/* Incoming call notification */}
       {incomingCall && (
