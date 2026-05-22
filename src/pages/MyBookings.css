@@ -2,12 +2,13 @@
   min-height: 100vh;
   background-color: #0a0a1a;
   color: white;
-  padding: 40px 20px;
+  padding: 8rem 2rem 4rem;
   position: relative;
   overflow: hidden;
 }
 
 .my-bookings-container {
+  width: 100%;
   max-width: 1000px;
   margin: 0 auto;
   position: relative;
