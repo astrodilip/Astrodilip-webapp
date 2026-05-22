@@ -1,32 +1,59 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Phone } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, PhoneOff } from 'lucide-react';
 import './VideoCall.css';
 
-// ICE servers (STUN) - free Google servers for WebRTC connection
+// ─────────────────────────────────────────────────────────────
+// FIX 1: Added TURN servers — required for production/Render.
+// STUN-only works on localhost but fails across real networks.
+// These free Open Relay TURN servers relay media when peers
+// can't connect directly (firewalls, NAT, mobile networks).
+// ─────────────────────────────────────────────────────────────
 const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
   ]
 };
 
 const VideoCall = ({
   socket,
-  callType,           // 'video' or 'audio'
-  remoteSocketId,     // socket id of the other person
-  remoteUserName,     // name of the other person
-  isIncoming,         // true = we received the call, false = we made the call
-  onEndCall,          // callback when call ends
-  callerSocketId,     // only for incoming calls - who called us
+  callType,
+  remoteSocketId,
+  remoteUserName,
+  isIncoming,
+  onEndCall,
+  callerSocketId,
 }) => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
 
-  // BUG 4 FIX: Queue ICE candidates that arrive before remoteDescription is set
+  // ICE candidate queue — candidates can arrive before remoteDescription is set
   const iceCandidateQueueRef = useRef([]);
   const remoteDescSetRef = useRef(false);
+
+  // ─────────────────────────────────────────────────────────────
+  // FIX 2: Store the live target socket ID in a ref so handleEndCall
+  // always sends end_call to the correct socket, even if it changed
+  // after the component mounted (race condition on Render).
+  // ─────────────────────────────────────────────────────────────
+  const liveTargetRef = useRef(remoteSocketId || callerSocketId || null);
 
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
@@ -34,65 +61,62 @@ const VideoCall = ({
   const [callDuration, setCallDuration] = useState(0);
   const timerRef = useRef(null);
 
-  // ── Start local media (camera/mic) ──
+  // ─────────────────────────────────────────────────────────────
+  // FIX 3: disconnectCountRef — don't end the call immediately on
+  // 'disconnected'. Give it 4 seconds to auto-recover (it often
+  // does on mobile/WiFi switches). Only end on 'failed' or if
+  // 'disconnected' persists.
+  // ─────────────────────────────────────────────────────────────
+  const disconnectTimerRef = useRef(null);
+
+  // ── Start local media ──
   const startLocalStream = async () => {
     try {
-      const constraints = {
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
-        video: callType === 'video'
-      };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video: callType === 'video',
+      });
       localStreamRef.current = stream;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
       }
       return stream;
     } catch (err) {
-      console.error('Error accessing media devices:', err);
+      console.error('Media device error:', err);
       alert('Could not access camera/microphone. Please allow permissions and try again.');
       onEndCall();
     }
   };
 
-  // BUG 4 FIX: Safely add ICE candidate only after remote description is set
+  // ── Safe ICE candidate (queues if remoteDesc not set yet) ──
   const safeAddIceCandidate = async (candidate) => {
     const pc = peerConnectionRef.current;
     if (!pc) return;
-
     if (remoteDescSetRef.current) {
-      try {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (e) {
-        console.warn('ICE candidate error:', e);
-      }
+      try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); }
+      catch (e) { console.warn('ICE add error:', e); }
     } else {
-      // Queue it — will be flushed after setRemoteDescription
       iceCandidateQueueRef.current.push(candidate);
     }
   };
 
-  // BUG 4 FIX: Flush all queued ICE candidates after remote description is set
+  // ── Flush queued ICE candidates after remoteDesc is set ──
   const flushIceCandidateQueue = async () => {
     const pc = peerConnectionRef.current;
     if (!pc) return;
     remoteDescSetRef.current = true;
-    for (const candidate of iceCandidateQueueRef.current) {
-      try {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (e) {
-        console.warn('Queued ICE candidate error:', e);
-      }
+    for (const c of iceCandidateQueueRef.current) {
+      try { await pc.addIceCandidate(new RTCIceCandidate(c)); }
+      catch (e) { console.warn('Queued ICE error:', e); }
     }
     iceCandidateQueueRef.current = [];
   };
 
-  // ── Create Peer Connection ──
-  const createPeerConnection = (stream, dynamicTarget = null) => {
+  // ── Create peer connection ──
+  const createPeerConnection = (stream, targetId) => {
     const pc = new RTCPeerConnection(ICE_SERVERS);
 
-    stream.getTracks().forEach(track => {
-      pc.addTrack(track, stream);
-    });
+    stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
     pc.ontrack = (event) => {
       if (remoteVideoRef.current) {
@@ -102,21 +126,36 @@ const VideoCall = ({
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        const target = dynamicTarget || remoteSocketId || callerSocketId;
-        socket.emit('ice_candidate', {
-          targetSocketId: target,
-          candidate: event.candidate
-        });
+        const target = targetId || liveTargetRef.current;
+        if (target) {
+          socket.emit('ice_candidate', { targetSocketId: target, candidate: event.candidate });
+        }
       }
     };
 
+    // FIX 3: Don't end call on 'disconnected' — wait 4s for recovery
     pc.onconnectionstatechange = () => {
-      console.log('Connection state:', pc.connectionState);
-      if (pc.connectionState === 'connected') {
+      const state = pc.connectionState;
+      console.log('WebRTC connection state:', state);
+
+      if (state === 'connected') {
+        clearTimeout(disconnectTimerRef.current);
         setCallStatus('active');
         startTimer();
       }
-      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+
+      if (state === 'disconnected') {
+        // Give 4 seconds to auto-recover before ending
+        disconnectTimerRef.current = setTimeout(() => {
+          if (peerConnectionRef.current?.connectionState !== 'connected') {
+            handleEndCall();
+          }
+        }, 4000);
+      }
+
+      if (state === 'failed') {
+        // 'failed' is unrecoverable — end immediately
+        clearTimeout(disconnectTimerRef.current);
         handleEndCall();
       }
     };
@@ -125,8 +164,11 @@ const VideoCall = ({
     return pc;
   };
 
-  // ── Caller: create and send offer ──
+  // ── Caller: create offer ──
   const startCall = async (accepterSocketId) => {
+    // Update live target ref with the real accepter socket ID
+    if (accepterSocketId) liveTargetRef.current = accepterSocketId;
+
     let stream = localStreamRef.current;
     if (!stream) stream = await startLocalStream();
     if (!stream) return;
@@ -137,34 +179,32 @@ const VideoCall = ({
     await pc.setLocalDescription(offer);
 
     socket.emit('webrtc_offer', {
-      targetSocketId: accepterSocketId || remoteSocketId,
-      offer
+      targetSocketId: accepterSocketId || liveTargetRef.current,
+      offer,
     });
   };
 
-  // ── Callee: handle incoming offer, send answer ──
+  // ── Callee: handle offer → send answer ──
   const handleOffer = async (offer, callerSockId) => {
+    if (callerSockId) liveTargetRef.current = callerSockId;
+
     const stream = await startLocalStream();
     if (!stream) return;
 
     const pc = createPeerConnection(stream, callerSockId);
 
     await pc.setRemoteDescription(new RTCSessionDescription(offer));
-
-    // BUG 4 FIX: Flush any ICE candidates that arrived before the offer
     await flushIceCandidateQueue();
 
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
-    socket.emit('webrtc_answer', {
-      targetSocketId: callerSockId,
-      answer
-    });
+    socket.emit('webrtc_answer', { targetSocketId: callerSockId, answer });
   };
 
-  // ── Start call timer ──
+  // ── Timer ──
   const startTimer = () => {
+    if (timerRef.current) return; // prevent double-start
     timerRef.current = setInterval(() => {
       setCallDuration(prev => prev + 1);
     }, 1000);
@@ -176,79 +216,84 @@ const VideoCall = ({
     return `${m}:${s}`;
   };
 
-  // ── End call cleanup ──
+  // ── End call ──
   const handleEndCall = () => {
     clearInterval(timerRef.current);
+    clearTimeout(disconnectTimerRef.current);
+
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(t => t.stop());
     }
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
     }
-    const target = remoteSocketId || callerSocketId;
+
+    // FIX 2: Use liveTargetRef — always has the correct current socket ID
+    const target = liveTargetRef.current;
     if (target) {
       socket.emit('end_call', { targetSocketId: target });
     }
+
     setCallStatus('ended');
     setTimeout(() => onEndCall(), 1000);
   };
 
-  // ── Toggle Mute ──
+  // ── Toggle mute / camera ──
   const toggleMute = () => {
-    if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach(track => {
-        track.enabled = !track.enabled;
-      });
-      setIsMuted(prev => !prev);
-    }
+    localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled; });
+    setIsMuted(prev => !prev);
   };
 
-  // ── Toggle Camera ──
   const toggleCamera = () => {
-    if (localStreamRef.current) {
-      localStreamRef.current.getVideoTracks().forEach(track => {
-        track.enabled = !track.enabled;
-      });
-      setIsCameraOff(prev => !prev);
-    }
+    localStreamRef.current?.getVideoTracks().forEach(t => { t.enabled = !t.enabled; });
+    setIsCameraOff(prev => !prev);
   };
 
-  // ── Socket listeners & call init ──
+  // ─────────────────────────────────────────────────────────────
+  // FIX 4: call_accepted is now handled in Chat.jsx/Admin.jsx
+  // BEFORE VideoCall mounts, so by the time this component runs
+  // its useEffect the accepterSocketId is passed in as a prop
+  // (remoteSocketId). No race condition.
+  //
+  // But we ALSO listen here as a fallback in case the event
+  // fires slightly after mount (timing edge case on slow networks).
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
+    // Start local stream immediately on mount (for both caller & callee)
+    startLocalStream();
+
+    // Caller: if call_accepted fires after mount (slow network edge case)
     if (!isIncoming) {
-      startLocalStream();
       socket.on('call_accepted', ({ accepterSocketId }) => {
-        setTimeout(() => startCall(accepterSocketId), 300);
+        // Small delay to ensure local stream is ready
+        setTimeout(() => startCall(accepterSocketId), 200);
       });
     }
 
+    // Callee receives offer
     socket.on('webrtc_offer', ({ offer, callerSocketId: callerSockId }) => {
       handleOffer(offer, callerSockId);
     });
 
+    // Caller receives answer
     socket.on('webrtc_answer', async ({ answer }) => {
       if (peerConnectionRef.current) {
         await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
-        // BUG 4 FIX: Flush queued ICE candidates now that remote description is set
         await flushIceCandidateQueue();
       }
     });
 
-    // BUG 4 FIX: Use safeAddIceCandidate instead of adding directly
+    // ICE candidates
     socket.on('ice_candidate', ({ candidate }) => {
-      if (candidate) {
-        safeAddIceCandidate(candidate);
-      }
+      if (candidate) safeAddIceCandidate(candidate);
     });
 
+    // Remote ended the call
     socket.on('call_ended', () => {
       clearInterval(timerRef.current);
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(t => t.stop());
-      }
-      if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
-      }
+      clearTimeout(disconnectTimerRef.current);
+      localStreamRef.current?.getTracks().forEach(t => t.stop());
+      peerConnectionRef.current?.close();
       setCallStatus('ended');
       setTimeout(() => onEndCall(), 1000);
     });
@@ -260,15 +305,11 @@ const VideoCall = ({
       socket.off('ice_candidate');
       socket.off('call_ended');
       clearInterval(timerRef.current);
+      clearTimeout(disconnectTimerRef.current);
     };
   }, []);
 
-  useEffect(() => {
-    if (isIncoming) {
-      startLocalStream();
-    }
-  }, []);
-
+  // ── JSX ──
   return (
     <div className={`vc-overlay ${callType === 'audio' ? 'vc-audio-mode' : ''}`}>
       <div className="vc-container">
@@ -305,7 +346,7 @@ const VideoCall = ({
               {remoteUserName?.charAt(0)?.toUpperCase() || 'U'}
             </div>
             <div className="vc-audio-waves">
-              <span></span><span></span><span></span><span></span><span></span>
+              <span /><span /><span /><span /><span />
             </div>
             <video ref={remoteVideoRef} autoPlay playsInline style={{ display: 'none' }} />
             <video ref={localVideoRef} autoPlay playsInline muted style={{ display: 'none' }} />
