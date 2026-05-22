@@ -106,6 +106,73 @@ app.get('/api/online-users', (req, res) => {
   }));
   res.status(200).json({ onlineUsers: online });
 });
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    await User.findByIdAndDelete(userId);
+    await Message.deleteMany({ $or: [{ from: userId }, { to: userId }] });
+    res.status(200).json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalBookings = await Booking.countDocuments();
+    const completedSessions = await Booking.countDocuments({ status: 'completed' });
+    
+    const revenueResult = await Booking.aggregate([
+      { $match: { paymentStatus: 'paid' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const totalRevenue = revenueResult.length > 0 ? revenueResult[0].total : 0;
+    
+    const recentBookings = await Booking.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('userName date timeSlot consultationType amount status');
+      
+    res.status(200).json({
+      totalUsers,
+      totalBookings,
+      completedSessions,
+      totalRevenue,
+      recentBookings
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+app.get('/api/bookings/admin/all', async (req, res) => {
+  try {
+    const bookings = await Booking.find().sort({ createdAt: -1 });
+    res.status(200).json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
+});
+
+app.put('/api/bookings/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const updatedBooking = await Booking.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    res.status(200).json({ message: 'Booking status updated', booking: updatedBooking });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update booking status' });
+  }
+});
 
 app.get('/api/messages/:userId', async (req, res) => {
   try {
