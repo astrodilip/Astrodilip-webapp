@@ -184,6 +184,32 @@ app.get('/api/messages/:userId', async (req, res) => {
   }
 });
 
+app.get('/api/slots', async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) return res.status(400).json({ error: 'Date is required' });
+    
+    // Find confirmed or pending bookings for this date
+    const bookings = await Booking.find({ date, status: { $in: ['pending', 'confirmed'] } });
+    const bookedTimes = bookings.map(b => b.timeSlot);
+
+    const standardSlots = [
+      '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+      '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM',
+      '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM'
+    ];
+
+    const slots = standardSlots.map(time => ({
+      time,
+      available: !bookedTimes.includes(time)
+    }));
+
+    res.status(200).json({ slots });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch slots' });
+  }
+});
+
 app.get('/api/bookings', async (req, res) => {
   try {
     const bookings = await Booking.find().sort({ createdAt: -1 });

@@ -11,6 +11,8 @@ import Chat from './pages/Chat';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Booking from './pages/Booking';
+import MyBookings from './pages/MyBookings';
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/booking" element={<Booking />} />
+            <Route path="/my-bookings" element={<MyBookings />} />
           </Routes>
         </main>
         <Footer />
