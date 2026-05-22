@@ -244,6 +244,16 @@ io.on('connection', (socket) => {
 
     try {
       if (role === 'admin') {
+        // Kick any existing admin session to prevent duplicate admin sockets
+        const existingAdmin = Array.from(activeUsers.values()).find(
+          u => u.role === 'admin' && u.id !== socket.id
+        );
+        if (existingAdmin) {
+          console.log('Kicking old admin session:', existingAdmin.id);
+          io.to(existingAdmin.id).emit('force_disconnect');
+          activeUsers.delete(existingAdmin.id);
+        }
+
         const clients = Array.from(activeUsers.values()).filter(u => u.role === 'client');
         const messages = await Message.find().sort({ timestamp: 1 });
         socket.emit('admin_init', { clients, messages });

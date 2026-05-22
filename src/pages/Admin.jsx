@@ -102,6 +102,11 @@ const Admin = () => {
       setActiveCall(null);
     });
 
+    socket.on('force_disconnect', () => {
+      alert('Another admin session was started. This tab has been logged out.');
+      setIsJoined(false);
+    });
+
     return () => {
       socket.off('admin_init');
       socket.off('client_joined');
