@@ -355,6 +355,32 @@ const Admin = () => {
     return new Date(dateString).toLocaleDateString('en-GB');
   };
 
+  // Parse booking modal details from notes if they are combined
+  let modalDob = 'N/A';
+  let modalTob = 'N/A';
+  let modalPob = 'N/A';
+  let modalQuestion = 'No specific question provided.';
+
+  if (selectedBookingForModal) {
+    modalDob = selectedBookingForModal.dob || 'N/A';
+    modalTob = selectedBookingForModal.tob || 'N/A';
+    modalPob = selectedBookingForModal.pob || 'N/A';
+    modalQuestion = selectedBookingForModal.notes || 'No specific question provided.';
+
+    if (modalDob === 'N/A' && selectedBookingForModal.notes && selectedBookingForModal.notes.includes('DOB:')) {
+      const notesStr = selectedBookingForModal.notes;
+      const dobMatch = notesStr.match(/DOB:\s*([^,]+)/);
+      const tobMatch = notesStr.match(/TOB:\s*([^,]+)/);
+      const pobMatch = notesStr.match(/POB:\s*([^.]+)/);
+      const qMatch = notesStr.match(/Q:\s*(.*)/);
+
+      if (dobMatch) modalDob = dobMatch[1].trim();
+      if (tobMatch) modalTob = tobMatch[1].trim();
+      if (pobMatch) modalPob = pobMatch[1].trim();
+      if (qMatch) modalQuestion = qMatch[1].trim() || 'No specific question provided.';
+    }
+  }
+
   // ── Render: Active Call Overlay ──
   if (activeCall) {
     return (
@@ -1011,9 +1037,9 @@ const Admin = () => {
             <div style={{ marginBottom: '24px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
               <h3 style={{ fontSize: '1.1rem', color: '#F59E0B', marginBottom: '12px' }}>Astrological Details</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '0.9rem' }}>
-                <div><span style={{ color: 'rgba(255,255,255,0.5)' }}>DOB:</span> {selectedBookingForModal.dob || 'N/A'}</div>
-                <div><span style={{ color: 'rgba(255,255,255,0.5)' }}>TOB:</span> {selectedBookingForModal.tob || 'N/A'}</div>
-                <div style={{ gridColumn: '1 / -1' }}><span style={{ color: 'rgba(255,255,255,0.5)' }}>Place:</span> {selectedBookingForModal.pob || 'N/A'}</div>
+                <div><span style={{ color: 'rgba(255,255,255,0.5)' }}>DOB:</span> {modalDob}</div>
+                <div><span style={{ color: 'rgba(255,255,255,0.5)' }}>TOB:</span> {modalTob}</div>
+                <div style={{ gridColumn: '1 / -1' }}><span style={{ color: 'rgba(255,255,255,0.5)' }}>Place:</span> {modalPob}</div>
               </div>
             </div>
 
@@ -1021,7 +1047,7 @@ const Admin = () => {
             <div style={{ marginBottom: '24px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
               <h3 style={{ fontSize: '1.1rem', color: '#F59E0B', marginBottom: '12px' }}>Client's Question / Topic</h3>
               <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                {selectedBookingForModal.notes || 'No specific question provided.'}
+                {modalQuestion}
               </div>
             </div>
 
