@@ -45,12 +45,10 @@ const Booking = () => {
     const dates = [];
     let d = new Date();
     for (let i = 0; i < 14; i++) {
-      const isSunday = d.getDay() === 0;
       dates.push({
         fullDate: d.toISOString().split('T')[0],
         dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
-        dateNum: d.getDate(),
-        isSunday
+        dateNum: d.getDate()
       });
       d.setDate(d.getDate() + 1);
     }
@@ -174,12 +172,11 @@ const Booking = () => {
                 {dates.map((d, i) => (
                   <div 
                     key={i}
-                    className={`date-card ${d.isSunday ? 'disabled' : ''} ${selectedDate === d.fullDate ? 'selected' : ''}`}
-                    onClick={() => !d.isSunday && setSelectedDate(d.fullDate)}
+                    className={`date-card ${selectedDate === d.fullDate ? 'selected' : ''}`}
+                    onClick={() => setSelectedDate(d.fullDate)}
                   >
                     <span className="day-name">{d.dayName}</span>
                     <span className="date-num">{d.dateNum}</span>
-                    {d.isSunday && <span className="holiday-text">Holiday</span>}
                   </div>
                 ))}
               </div>
@@ -187,7 +184,10 @@ const Booking = () => {
 
             {/* Section 3: Time Slot */}
             <div className="booking-section">
-              <h2>3. Select Time Slot</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '20px', paddingBottom: '10px' }}>
+                <h2 style={{ borderBottom: 'none', margin: 0, padding: 0 }}>3. Select Time Slot</h2>
+                <span style={{ color: '#10B981', fontSize: '0.85rem', fontWeight: 'bold' }}>🕒 Indian Standard Time (IST)</span>
+              </div>
               {!selectedDate ? (
                 <p className="hint-text">Please select a date first.</p>
               ) : loadingSlots ? (
