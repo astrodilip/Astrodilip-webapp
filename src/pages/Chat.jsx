@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { Send, ArrowLeft, User, Phone, Video, Paperclip, Smile, CheckCheck, X, FileText, CalendarX } from 'lucide-react';
+import { Send, ArrowLeft, User, Phone, Video, Paperclip, Smile, CheckCheck, X, FileText, CalendarX, Clock, Bell } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import VideoCall from '../components/VideoCall';
 import CallNotification from '../components/CallNotification';
@@ -29,6 +29,7 @@ const Chat = () => {
   const [incomingCall, setIncomingCall] = useState(null);
   const [hasBooking, setHasBooking] = useState(false);
   const [loadingBooking, setLoadingBooking] = useState(true);
+  const [sessionReminder, setSessionReminder] = useState(null);
 
   const adminSocketIdRef = useRef(null);
   const messagesEndRef   = useRef(null);
@@ -65,6 +66,11 @@ const Chat = () => {
       setIncomingCall({ callerSocketId, callerName, callType });
     });
 
+    socket.on('session_reminder', ({ message, consultationType, bookingId }) => {
+      // Show a prominent notification banner at the top of the chat
+      setSessionReminder({ message, consultationType, bookingId });
+    });
+
     // ─────────────────────────────────────────────────────────
     // KEY FIX: catch call_accepted HERE in Chat.jsx (always mounted)
     // NOT inside VideoCall (which may not be mounted yet when this fires).
@@ -99,12 +105,43 @@ const Chat = () => {
       socket.off('call_accepted');
       socket.off('call_rejected');
       socket.off('call_ended');
+      socket.off('session_reminder');
     };
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (sessionReminder) {
+      const timer = setTimeout(() => {
+        setSessionReminder(null);
+      }, 60000);
+      return () => clearTimeout(timer);
+    }
+  }, [sessionReminder]);
+
+  const handleRemindAdmin = async () => {
+    try {
+      const res = await fetch(`https://astrodilip-webapp.onrender.com/api/bookings/user/${user.id || user._id}`);
+      const data = await res.json();
+      const confirmedBookings = data.filter(b => b.status === 'confirmed');
+      if (confirmedBookings.length > 0) {
+        const booking = confirmedBookings[0];
+        socket.emit('send_message', {
+          text: `⏰ REMINDER: ${user.name} is reminding you of their scheduled consultation.\nBooking: ${booking.consultationType} on ${new Date(booking.date).toLocaleDateString('en-GB')} at ${booking.timeSlot}.\nPlease join when ready.`,
+          to: 'admin',
+          isReminder: true
+        });
+        alert('Reminder sent to Astro Dilip Sharma!');
+      } else {
+        alert("You don't have any confirmed bookings yet.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     const handler = (e) => {
@@ -313,7 +350,34 @@ const Chat = () => {
   }
 
   return (
-    <div className="chat-page-wrapper custom-chat-bg">
+    <div className="chat-page-wrapper custom-chat-bg" style={{ position: 'relative' }}>
+      {sessionReminder && (
+        <div style={{
+          position: 'fixed', top: '10px', left: '50%', transform: 'translateX(-50%)',
+          zIndex: 1000, background: 'rgba(245, 158, 11, 0.15)', border: '2px solid #F59E0B',
+          borderRadius: '12px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)',
+          animation: 'slideDown 0.3s ease-out, pulseBorder 2s infinite'
+        }}>
+          <Bell color="#F59E0B" size={24} style={{ flexShrink: 0 }} />
+          <div>
+            <h4 style={{ color: '#F59E0B', margin: '0 0 4px 0' }}>Your session is starting now!</h4>
+            <p style={{ color: '#fff', margin: 0, fontSize: '0.9rem' }}>{sessionReminder.message}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
+            {['video', 'audio'].includes(sessionReminder.consultationType) && (
+              <button onClick={() => { startCall(sessionReminder.consultationType); setSessionReminder(null); }} className="btn-primary" style={{ padding: '8px 16px', background: '#F59E0B', color: '#000' }}>
+                {sessionReminder.consultationType === 'video' ? <Video size={16} style={{marginRight: '6px'}} /> : <Phone size={16} style={{marginRight: '6px'}} />}
+                Join Now
+              </button>
+            )}
+            <button onClick={() => setSessionReminder(null)} className="btn-outline" style={{ padding: '8px 16px', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}>
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {incomingCall && (
         <CallNotification callerName={incomingCall.callerName} callType={incomingCall.callType} onAccept={acceptCall} onReject={rejectCall} />
       )}
@@ -334,6 +398,9 @@ const Chat = () => {
             </div>
           </div>
           <div className="header-actions">
+            <button className="action-btn" title="Remind Admin" onClick={handleRemindAdmin} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '6px 12px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+              <Clock size={16} /> Remind Admin
+            </button>
             <button className="action-btn" title="Voice Call" onClick={() => startCall('audio')}><Phone size={18} /></button>
             <button className="action-btn" title="Video Call" onClick={() => startCall('video')}><Video size={18} /></button>
           </div>
@@ -365,7 +432,12 @@ const Chat = () => {
                           </div>
                         </div>
                       )}
-                      {msg.text && <p>{msg.text}</p>}
+                      {msg.text && (
+                        <div style={msg.isReminder ? { background: 'rgba(245,158,11,0.1)', borderLeft: '3px solid #F59E0B', padding: '8px 12px', borderRadius: '4px' } : {}}>
+                          {msg.isReminder && <div style={{ color: '#F59E0B', marginBottom: '4px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={14} /> Reminder</div>}
+                          <p style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
+                        </div>
+                      )}
                     </div>
                     <div className="msg-meta">
                       <span className="timestamp">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>

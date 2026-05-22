@@ -434,6 +434,29 @@ io.on('connection', (socket) => {
   });
 
   // =============================================
+  // SESSION REMINDER
+  // =============================================
+  socket.on('session_reminder', ({ targetUserId, bookingId, message, consultationType }) => {
+    // Find the client socket by userId
+    const targetClient = Array.from(activeUsers.values()).find(
+      u => u.userId === targetUserId
+    );
+    if (targetClient) {
+      io.to(targetClient.id).emit('session_reminder', {
+        bookingId,
+        message,
+        consultationType
+      });
+      socket.emit('reminder_sent', { success: true });
+    } else {
+      socket.emit('reminder_sent', { 
+        success: false, 
+        message: 'User is not currently online' 
+      });
+    }
+  });
+
+  // =============================================
   // DISCONNECT
   // =============================================
   socket.on('disconnect', () => {
