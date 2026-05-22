@@ -8,14 +8,18 @@ const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [user, setUser] = useState(null);
+
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
+    const saved = localStorage.getItem('astrology_user');
+    if (!saved) {
+      localStorage.setItem('redirect_after_login', '/my-bookings');
       navigate('/login');
       return;
     }
-    const user = JSON.parse(userStr);
-    fetchBookings(user.id || user._id);
+    const parsedUser = JSON.parse(saved);
+    setUser(parsedUser);
+    fetchBookings(parsedUser.id || parsedUser._id);
   }, [navigate]);
 
   const fetchBookings = async (userId) => {
@@ -26,7 +30,7 @@ const MyBookings = () => {
     try {
       const res = await fetch(`https://astrodilip-webapp.onrender.com/api/bookings/user/${userId}`);
       const data = await res.json();
-      setBookings(data);
+      setBookings(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch bookings', err);
     } finally {

@@ -36,7 +36,14 @@ const Login = () => {
       };
       localStorage.setItem('astrology_user', JSON.stringify(userToSave));
       localStorage.setItem('astrology_user_id', userToSave.id);
-      navigate('/consultation');
+      
+      const redirectUrl = localStorage.getItem('redirect_after_login');
+      if (redirectUrl) {
+        localStorage.removeItem('redirect_after_login');
+        navigate(redirectUrl);
+      } else {
+        navigate('/consultation');
+      }
     } catch (err) {
       setError(err.message);
     } finally {

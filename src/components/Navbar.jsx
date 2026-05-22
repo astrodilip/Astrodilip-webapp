@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, PhoneCall, User, LogOut } from 'lucide-react';
+import { Menu, X, PhoneCall, User, LogOut, Calendar } from 'lucide-react';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -49,6 +49,11 @@ const Navbar = () => {
           <Link to="/courses" className={location.pathname === '/courses' ? 'active-link' : ''} onClick={closeMenu}>Courses</Link>
           <Link to="/calculators" className={location.pathname === '/calculators' ? 'active-link' : ''} onClick={closeMenu}>Free Calculators</Link>
           <Link to="/contact" className={location.pathname === '/contact' ? 'active-link' : ''} onClick={closeMenu}>Contact</Link>
+          {user && (
+            <Link to="/my-bookings" className={location.pathname === '/my-bookings' ? 'active-link' : ''} onClick={closeMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Calendar size={16} /> My Bookings
+            </Link>
+          )}
         </div>
 
         <div className="nav-actions">
