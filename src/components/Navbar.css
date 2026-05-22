@@ -21,29 +21,32 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .nav-logo {
   font-family: var(--font-serif);
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: var(--accent);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
+  white-space: nowrap;
 }
 
 .nav-links {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
+  align-items: center;
 }
 
 .nav-links a {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--text-main);
   position: relative;
   padding-bottom: 0.2rem;
+  white-space: nowrap;
 }
 
 .nav-links a::after {
@@ -98,7 +101,7 @@
   color: var(--text-main);
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1150px) {
   .nav-links {
     display: none;
     position: absolute;
