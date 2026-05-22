@@ -51,6 +51,15 @@ const Admin = () => {
   const fileInputRef = useRef(null);
   const pickerRef = useRef(null);
 
+  // ── Auto-Login on Refresh ──
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (token) {
+      socket.emit('join', { role: 'admin', name: 'Astro Dilip Sharma' });
+      setIsJoined(true);
+    }
+  }, []);
+
   useEffect(() => {
     socket.on('admin_init', (data) => {
       setClients(data.clients);
@@ -197,6 +206,8 @@ const Admin = () => {
         body: JSON.stringify({ password: adminPassword }),
       });
       if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('adminToken', data.token);
         socket.emit('join', { role: 'admin', name: 'Astro Dilip Sharma' });
         setIsJoined(true);
       } else {
