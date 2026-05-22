@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { Send, ArrowLeft, User, Phone, Video, Paperclip, Smile, CheckCheck, X, FileText } from 'lucide-react';
+import { Send, ArrowLeft, User, Phone, Video, Paperclip, Smile, CheckCheck, X, FileText, CalendarX } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import VideoCall from '../components/VideoCall';
 import CallNotification from '../components/CallNotification';
@@ -27,6 +27,8 @@ const Chat = () => {
   const [pickerTab,   setPickerTab]   = useState('emoji');
   const [activeCall,  setActiveCall]  = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
+  const [hasBooking, setHasBooking] = useState(false);
+  const [loadingBooking, setLoadingBooking] = useState(true);
 
   const adminSocketIdRef = useRef(null);
   const messagesEndRef   = useRef(null);
@@ -36,7 +38,20 @@ const Chat = () => {
   useEffect(() => {
     const saved = localStorage.getItem('astrology_user');
     if (!saved) { navigate('/login'); return; }
-    setUser(JSON.parse(saved));
+    const parsedUser = JSON.parse(saved);
+    setUser(parsedUser);
+
+    fetch(`https://astrodilip-webapp.onrender.com/api/bookings/${parsedUser.id || parsedUser._id}`)
+      .then(res => res.json())
+      .then(data => {
+        const hasConfirmed = data.some(b => b.status === 'confirmed');
+        setHasBooking(hasConfirmed);
+        setLoadingBooking(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoadingBooking(false);
+      });
 
     socket.on('client_init', (data) => setMessages(data.messages));
     socket.on('receive_message', (msg) => setMessages(prev => [...prev, msg]));
@@ -244,6 +259,34 @@ const Chat = () => {
         >
           📵
         </button>
+      </div>
+    );
+  }
+
+  if (loadingBooking) {
+    return <div className="chat-container"><div className="glass-card" style={{ padding: '3rem 2rem', textAlign: 'center' }}><p style={{ color: '#fff' }}>Loading...</p></div></div>;
+  }
+
+  if (!hasBooking) {
+    return (
+      <div className="chat-container">
+        <div className="glass-card" style={{ padding: '3rem 2rem', textAlign: 'center', maxWidth: '500px', width: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem', color: '#F59E0B' }}>
+            <CalendarX size={64} />
+          </div>
+          <h2 style={{ color: '#fff', marginBottom: '1rem' }}>Appointment Required</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '1.1rem' }}>
+            Please book a consultation session before chatting with Astro Dilip Sharma.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <Link to="/booking" className="btn-primary" style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
+              Book a Consultation
+            </Link>
+            <Link to="/my-bookings" className="btn-outline" style={{ display: 'flex', justifyContent: 'center', padding: '1rem', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', textDecoration: 'none', borderRadius: '8px' }}>
+              View My Bookings
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }

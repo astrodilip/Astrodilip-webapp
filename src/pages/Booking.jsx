@@ -30,13 +30,12 @@ const Booking = () => {
 
   // Load user data if logged in
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('astrology_user');
     if (userStr) {
       const user = JSON.parse(userStr);
       setFormData(prev => ({ ...prev, name: user.name || '', email: user.email || '', phone: user.phone || '' }));
     } else {
-      // User is not logged in, they should probably log in first
-      alert('Please log in to book a consultation.');
+      // User is not logged in, silently redirect
       navigate('/login');
     }
   }, [navigate]);
@@ -102,7 +101,7 @@ const Booking = () => {
       return alert('Please provide your time of birth or check "Don\'t know exact time".');
     }
 
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('astrology_user');
     const user = userStr ? JSON.parse(userStr) : {};
 
     const bookingData = {
