@@ -1,7 +1,6 @@
 .hero-section {
   padding: 6rem 0;
   position: relative;
-  overflow: hidden;
 }
 
 .hero-container {
@@ -9,11 +8,15 @@
   align-items: center;
   justify-content: center;
   gap: 6rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .hero-content {
   flex: 1;
   max-width: 600px;
+  min-width: 0;
 }
 
 .hero-title {

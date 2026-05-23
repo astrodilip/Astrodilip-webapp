@@ -4,7 +4,6 @@
   color: var(--text-main);
   padding: 8rem 2rem 4rem;
   position: relative;
-  overflow: hidden;
 }
 
 .my-bookings-container {
@@ -13,6 +12,7 @@
   margin: 0 auto;
   position: relative;
   z-index: 1;
+  min-width: 0;
 }
 
 .page-title {

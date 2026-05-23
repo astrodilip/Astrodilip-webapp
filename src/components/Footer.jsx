@@ -25,6 +25,7 @@ const Footer = () => {
             <h4>Quick Links</h4>
             <ul>
               <li><Link to="/">Home</Link></li>
+              <li><Link to="/about">About Us</Link></li>
               <li><Link to="/booking">Book Consultation</Link></li>
               <li><Link to="/courses">Astrology Courses</Link></li>
               <li><Link to="/calculators">Free Calculators</Link></li>
@@ -67,6 +68,7 @@ const Footer = () => {
           <div className="footer-bottom-links">
             <Link to="/privacy">Privacy Policy</Link>
             <Link to="/terms">Terms of Service</Link>
+            <Link to="/refund">Refund Policy</Link>
           </div>
         </div>
       </div>

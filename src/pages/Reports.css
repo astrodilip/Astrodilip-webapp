@@ -1,6 +1,8 @@
-﻿.reports-page {
-  padding: 8rem 0 5rem;
+.reports-page {
+  padding: 8rem 2rem 5rem;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
 }
 
 .reports-subtitle {
@@ -16,6 +18,9 @@
   grid-template-columns: 1fr 1.5fr;
   gap: 3rem;
   align-items: start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .form-card {

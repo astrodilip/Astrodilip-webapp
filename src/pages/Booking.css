@@ -4,7 +4,6 @@
   color: var(--text-main);
   padding: 8rem 2rem 4rem;
   position: relative;
-  overflow: hidden;
 }
 
 .stars-bg {
@@ -17,6 +16,7 @@
   margin: 0 auto;
   position: relative;
   z-index: 1;
+  min-width: 0;
 }
 
 .booking-title {
@@ -36,6 +36,9 @@
   display: flex;
   gap: 30px;
   align-items: flex-start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .booking-form-area {
@@ -43,6 +46,14 @@
   display: flex;
   flex-direction: column;
   gap: 40px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.booking-section {
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -111,6 +122,8 @@
   gap: 12px;
   overflow-x: auto;
   padding-bottom: 10px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .date-picker::-webkit-scrollbar {
@@ -232,6 +245,9 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .form-row {
@@ -378,7 +394,7 @@
 }
 
 /* RESPONSIVE */
-@media (max-width: 1024px) {
+@media (max-width: 1250px) {
   .booking-layout {
     flex-direction: column;
   }

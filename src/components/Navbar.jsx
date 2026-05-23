@@ -38,9 +38,9 @@ const Navbar = () => {
   return (
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="nav-container">
-        <Link to="/" className="nav-logo" onClick={closeMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-          <img src="/logo.svg" alt="Logo" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
-          Astro Dilip Sharma
+        <Link to="/" className="nav-logo" onClick={closeMenu}>
+          <img src="/logo.svg" alt="Logo" className="nav-logo-img" />
+          <span className="nav-logo-text">Astro Dilip Sharma</span>
         </Link>
         
         <div className={`nav-links ${isOpen ? 'active' : ''}`}>
@@ -49,7 +49,7 @@ const Navbar = () => {
           <Link to="/reports" className={location.pathname === '/reports' ? 'active-link' : ''} onClick={closeMenu}>Reports</Link>
           <Link to="/courses" className={location.pathname === '/courses' ? 'active-link' : ''} onClick={closeMenu}>Courses</Link>
           <Link to="/calculators" className={location.pathname === '/calculators' ? 'active-link' : ''} onClick={closeMenu}>Free Calculators</Link>
-          <Link to="/contact" className={location.pathname === '/contact' ? 'active-link' : ''} onClick={closeMenu}>Contact</Link>
+          <Link to="/about" className={location.pathname === '/about' ? 'active-link' : ''} onClick={closeMenu}>About Us</Link>
           {user && (
             <Link to="/my-bookings" className={location.pathname === '/my-bookings' ? 'active-link' : ''} onClick={closeMenu} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Calendar size={16} /> My Bookings
@@ -60,8 +60,8 @@ const Navbar = () => {
         <div className="nav-actions">
           {user ? (
             <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
-              <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)'}}>
-                <User size={18} color="var(--accent-main)" /> <span style={{fontSize: '0.9rem', fontWeight: 'bold'}}>{user.name.split(' ')[0]}</span>
+              <div className="nav-user-info">
+                <User size={18} color="var(--primary)" /> <span className="nav-user-name">{user.name.split(' ')[0]}</span>
               </div>
               <button onClick={handleLogout} style={{background: 'transparent', border: 'none', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center'}} title="Logout">
                 <LogOut size={18} />
