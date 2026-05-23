@@ -6,6 +6,8 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 
 import User from './models/User.js';
 import Message from './models/Message.js';
@@ -18,6 +20,11 @@ app.use(cors());
 app.use(express.json());
 
 const httpServer = createServer(app);
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY_HERE',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'YOUR_SECRET_HERE',
+});
 
 const io = new Server(httpServer, {
   cors: {
@@ -264,6 +271,56 @@ app.delete('/api/bookings/:id', async (req, res) => {
     res.status(200).json({ message: 'Booking deleted' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete booking' });
+  }
+});
+
+// ----- RAZORPAY LOGIC -----
+
+app.post('/api/create-order', async (req, res) => {
+  try {
+    const { amount, currency = 'INR', receipt = 'receipt#1' } = req.body;
+    const options = {
+      amount: amount * 100, // amount in smallest currency unit
+      currency,
+      receipt
+    };
+    const order = await razorpay.orders.create(options);
+    if (!order) return res.status(500).send("Some error occured");
+    res.json(order);
+  } catch (error) {
+    console.error('Error creating razorpay order:', error);
+    res.status(500).send(error);
+  }
+});
+
+app.post('/api/verify-payment', async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingData } = req.body;
+    
+    const sha = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || 'YOUR_SECRET_HERE');
+    sha.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+    const digest = sha.digest("hex");
+    
+    if (digest !== razorpay_signature) {
+      return res.status(400).json({ error: "Transaction is not legit!" });
+    }
+    
+    const newBooking = new Booking({
+      ...bookingData,
+      paymentStatus: 'paid',
+      paymentId: razorpay_payment_id,
+      razorpayOrderId: razorpay_order_id
+    });
+    await newBooking.save();
+    
+    res.json({
+      message: "success",
+      booking: newBooking,
+      paymentId: razorpay_payment_id
+    });
+  } catch (error) {
+    console.error('Error verifying payment:', error);
+    res.status(500).send(error);
   }
 });
 

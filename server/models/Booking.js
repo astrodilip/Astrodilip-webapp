@@ -11,6 +11,8 @@ const bookingSchema = new mongoose.Schema({
   status: { type: String, default: 'pending' }, // 'pending', 'confirmed', 'completed', 'cancelled'
   amount: { type: Number },
   paymentStatus: { type: String, default: 'pending' }, // 'pending', 'paid'
+  paymentId: { type: String },
+  razorpayOrderId: { type: String },
   createdAt: { type: Date, default: Date.now },
   notes: { type: String }
 });

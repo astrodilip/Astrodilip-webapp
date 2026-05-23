@@ -116,17 +116,63 @@ const Booking = () => {
     };
 
     try {
-      const res = await fetch('https://astrodilip-webapp.onrender.com/api/bookings', {
+      // 1. Create Order
+      const orderRes = await fetch('https://astrodilip-webapp.onrender.com/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingData)
+        body: JSON.stringify({ amount: bookingData.amount })
       });
-      if (res.ok) {
-        alert('Booking confirmed successfully!');
-        navigate('/my-bookings');
-      } else {
-        alert('Failed to confirm booking.');
+      
+      if (!orderRes.ok) {
+        return alert('Failed to initiate payment. Please try again.');
       }
+      
+      const order = await orderRes.json();
+      
+      // 2. Open Razorpay Checkout
+      const options = {
+        key: 'rzp_test_YOUR_KEY_HERE', // Replace with actual Razorpay Key
+        amount: order.amount,
+        currency: order.currency,
+        name: "Astro Dilip Sharma",
+        description: `${bookingData.consultationType} Consultation`,
+        order_id: order.id,
+        handler: async function (response) {
+          // 3. Verify Payment
+          const verifyRes = await fetch('https://astrodilip-webapp.onrender.com/api/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              bookingData: bookingData
+            })
+          });
+          
+          if (verifyRes.ok) {
+            alert('Payment successful & Booking confirmed!');
+            navigate('/my-bookings');
+          } else {
+            alert('Payment verification failed. If money was deducted, please contact support.');
+          }
+        },
+        prefill: {
+          name: bookingData.userName,
+          email: bookingData.userEmail,
+          contact: formData.phone
+        },
+        theme: {
+          color: "#FF6B00"
+        }
+      };
+
+      const rzp1 = new window.Razorpay(options);
+      rzp1.on('payment.failed', function (response){
+        alert(`Payment Failed: ${response.error.description}`);
+      });
+      rzp1.open();
+
     } catch (err) {
       console.error(err);
       alert('An error occurred while booking.');
