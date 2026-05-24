@@ -73,6 +73,33 @@ const Home = () => {
     { id: 12, name: 'Pisces', icon: 'https://img.icons8.com/color/96/pisces.png' }
   ];
 
+  const blogsData = [
+    {
+      id: 1,
+      title: "Understanding Planetary Transits in 2026",
+      excerpt: "Astro Dilip Sharma explains how the major transits of Saturn and Jupiter will impact your sun sign this year...",
+      date: "May 15, 2026",
+      author: "Astro Dilip Sharma",
+      image: "https://images.unsplash.com/photo-1532012197267-da84d127e765?q=80&w=600&auto=format&fit=crop"
+    },
+    {
+      id: 2,
+      title: "How Vastu Changed My Business",
+      excerpt: "After struggling for years, applying simple Vastu remedies suggested by Astro Dilip transformed my workspace energy...",
+      date: "May 10, 2026",
+      author: "Priya M. (Client Experience)",
+      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=600&auto=format&fit=crop"
+    },
+    {
+      id: 3,
+      title: "The Power of Lal Kitab Remedies",
+      excerpt: "Why Lal Kitab is considered one of the most practical and effective branches of astrology in the modern era.",
+      date: "May 2, 2026",
+      author: "Astro Dilip Sharma",
+      image: "https://images.unsplash.com/photo-1515594833215-d41935e4fc76?q=80&w=600&auto=format&fit=crop"
+    }
+  ];
+
   return (
     <div className="home-page">
       {/* Hero Section */}
@@ -206,6 +233,45 @@ const Home = () => {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Blog Section */}
+      <section className="blogs-section">
+        <ScrollReveal className="container section-big-card">
+          <div className="blogs-header">
+            <h2 className="blogs-title">Cosmic Insights & Experiences</h2>
+            <p className="blogs-subtitle">Read predictions by Astro Dilip Sharma and real experiences from our clients.</p>
+          </div>
+          <div className="blogs-grid">
+            {blogsData.map((blog, index) => (
+              <div
+                key={blog.id}
+                className="blog-card fade-in-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="blog-image-wrapper">
+                  <img src={blog.image} alt={blog.title} className="blog-image" />
+                </div>
+                <div className="blog-content">
+                  <span className="blog-date">{blog.date}</span>
+                  <h3 className="blog-card-title">{blog.title}</h3>
+                  <p className="blog-excerpt">{blog.excerpt}</p>
+                  <div className="blog-author">
+                    <span className="author-name">- {blog.author}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="blog-cta-wrapper fade-in-up" style={{ animationDelay: '0.4s' }}>
+            <div className="blog-cta-card">
+              <h3>Have a Cosmic Experience to Share?</h3>
+              <p>Write your own blog about how Astro Dilip Sharma's predictions or remedies changed your life.</p>
+              <Link to="/contact" className="btn-primary">Write Your Experience</Link>
+            </div>
+          </div>
+        </ScrollReveal>
       </section>
     </div>
   );
