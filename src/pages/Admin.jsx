@@ -43,6 +43,7 @@ const Admin = () => {
   // Blog Tab States
   const [allBlogs, setAllBlogs] = useState([]);
   const [newBlog, setNewBlog] = useState({ title: '', excerpt: '', date: '', author: '', image: '' });
+  const [editBlogData, setEditBlogData] = useState(null);
   
   // User Tab States
   const [userSearch, setUserSearch] = useState('');
@@ -240,6 +241,27 @@ const Admin = () => {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleUpdateBlog = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`https://astrodilip-webapp.onrender.com/api/blogs/${editBlogData._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editBlogData)
+      });
+      if (res.ok) {
+        setEditBlogData(null);
+        fetchBlogs();
+        alert('Blog updated successfully!');
+      } else {
+        alert('Failed to update blog on the server.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update blog');
     }
   };
 
@@ -1164,7 +1186,10 @@ const Admin = () => {
                             <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '14px' }}>{blog.date} • By {blog.author}</p>
                             <p style={{ margin: 0, fontSize: '13px', color: '#333' }}>{blog.excerpt.substring(0, 80)}...</p>
                           </div>
-                          <button onClick={() => handleDeleteBlog(blog._id)} style={{ background: 'rgba(220,38,38,0.1)', color: '#DC2626', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Delete</button>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button onClick={() => setEditBlogData(blog)} style={{ background: 'rgba(59,130,246,0.1)', color: '#3B82F6', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Edit</button>
+                            <button onClick={() => handleDeleteBlog(blog._id)} style={{ background: 'rgba(220,38,38,0.1)', color: '#DC2626', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Delete</button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1270,6 +1295,69 @@ const Admin = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+    </div>
+
+      {/* Edit Blog Modal */}
+      {editBlogData && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#FFF', padding: '32px', borderRadius: '16px', width: '90%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: 0, color: '#1A1400' }}>Edit Blog</h2>
+              <button onClick={() => setEditBlogData(null)} style={{ background: 'transparent', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#666' }}>&times;</button>
+            </div>
+            
+            <form onSubmit={handleUpdateBlog} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ color: '#1A1400', fontSize: '14px', fontWeight: 'bold' }}>Blog Title:</label>
+                <input type="text" value={editBlogData.title} onChange={(e) => setEditBlogData({...editBlogData, title: e.target.value})} required style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ color: '#1A1400', fontSize: '14px', fontWeight: 'bold' }}>Blog Description:</label>
+                <textarea value={editBlogData.excerpt} onChange={(e) => setEditBlogData({...editBlogData, excerpt: e.target.value})} required rows="4" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none', resize: 'vertical' }}></textarea>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ color: '#1A1400', fontSize: '14px', fontWeight: 'bold' }}>Date of Writing:</label>
+                <input type="text" value={editBlogData.date} onChange={(e) => setEditBlogData({...editBlogData, date: e.target.value})} required style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ color: '#1A1400', fontSize: '14px', fontWeight: 'bold' }}>Blog Written By:</label>
+                <input type="text" value={editBlogData.author} onChange={(e) => setEditBlogData({...editBlogData, author: e.target.value})} required style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} />
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ color: '#1A1400', fontSize: '14px', fontWeight: 'bold' }}>Update Blog Image (Optional):</label>
+                <input 
+                  type="file" 
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        let result = reader.result;
+                        if (!result.startsWith('data:image/')) {
+                            const base64Data = result.split('base64,')[1];
+                            result = `data:image/jpeg;base64,${base64Data}`;
+                        }
+                        setEditBlogData({...editBlogData, image: result});
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }} 
+                  style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} 
+                />
+                {editBlogData.image && (
+                  <img src={editBlogData.image} alt="preview" style={{ height: '60px', objectFit: 'contain', alignSelf: 'flex-start', borderRadius: '8px', marginTop: '8px' }} />
+                )}
+              </div>
+
+              <button type="submit" style={{ background: '#3B82F6', color: '#FFF', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginTop: '16px' }}>Save Changes</button>
+            </form>
           </div>
         </div>
       )}

@@ -196,6 +196,15 @@ app.put('/api/blogs/:id/publish', async (req, res) => {
   }
 });
 
+app.put('/api/blogs/:id', async (req, res) => {
+  try {
+    const updatedBlog = await Blog.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json(updatedBlog);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update blog' });
+  }
+});
+
 app.delete('/api/blogs/:id', async (req, res) => {
   try {
     await Blog.findByIdAndDelete(req.params.id);
