@@ -7,6 +7,7 @@ import Courses from './pages/Courses';
 import FreeCalculators from './pages/FreeCalculators';
 import Chat from './pages/Chat';
 import Admin from './pages/Admin';
+import SubmitBlog from './pages/SubmitBlog';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Booking from './pages/Booking';
@@ -30,6 +31,7 @@ function App() {
             <Route path="/calculators" element={<FreeCalculators />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/write-experience" element={<SubmitBlog />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/booking" element={<Booking />} />

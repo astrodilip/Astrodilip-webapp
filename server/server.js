@@ -161,10 +161,19 @@ app.delete('/api/users/:id', async (req, res) => {
 
 app.get('/api/blogs', async (req, res) => {
   try {
-    const blogs = await Blog.find().sort({ createdAt: -1 });
+    const blogs = await Blog.find({ status: 'published' }).sort({ createdAt: -1 });
     res.status(200).json(blogs);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch blogs' });
+  }
+});
+
+app.get('/api/blogs/all', async (req, res) => {
+  try {
+    const blogs = await Blog.find().sort({ createdAt: -1 });
+    res.status(200).json(blogs);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch all blogs' });
   }
 });
 
@@ -175,6 +184,15 @@ app.post('/api/blogs', async (req, res) => {
     res.status(201).json(newBlog);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create blog' });
+  }
+});
+
+app.put('/api/blogs/:id/publish', async (req, res) => {
+  try {
+    await Blog.findByIdAndUpdate(req.params.id, { status: 'published' });
+    res.status(200).json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to publish blog' });
   }
 });
 

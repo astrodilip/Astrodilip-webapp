@@ -189,7 +189,7 @@ const Admin = () => {
   const fetchBlogs = async () => {
     setLoading(true);
     try {
-      const res = await fetch('https://astrodilip-webapp.onrender.com/api/blogs');
+      const res = await fetch('https://astrodilip-webapp.onrender.com/api/blogs/all');
       const data = await res.json();
       setAllBlogs(data);
     } catch (err) {
@@ -225,6 +225,19 @@ const Admin = () => {
     try {
       const res = await fetch(`https://astrodilip-webapp.onrender.com/api/blogs/${id}`, { method: 'DELETE' });
       if (res.ok) fetchBlogs();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handlePublishBlog = async (id) => {
+    if (!window.confirm('Are you sure you want to approve and publish this experience to the home page?')) return;
+    try {
+      const res = await fetch(`https://astrodilip-webapp.onrender.com/api/blogs/${id}/publish`, { method: 'PUT' });
+      if (res.ok) {
+        fetchBlogs();
+        alert('Experience published successfully!');
+      }
     } catch (err) {
       console.error(err);
     }
@@ -1110,23 +1123,54 @@ const Admin = () => {
                 </form>
               </div>
 
-              <div>
-                <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#1A1400' }}>Published Blogs</h3>
-                {loading ? <p>Loading blogs...</p> : allBlogs.length === 0 ? <p>No blogs published yet.</p> : (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
-                    {allBlogs.map(blog => (
-                      <div key={blog._id} style={{ background: '#FFF', padding: '16px', borderRadius: '12px', border: '1px solid rgba(26, 20, 0, 0.1)', display: 'flex', gap: '16px', alignItems: 'center' }}>
-                        <img src={blog.image} alt="blog" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
-                        <div style={{ flex: 1 }}>
-                          <h4 style={{ margin: '0 0 8px 0', color: '#1A1400' }}>{blog.title}</h4>
-                          <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '14px' }}>{blog.date} • By {blog.author}</p>
-                          <p style={{ margin: 0, fontSize: '13px', color: '#333' }}>{blog.excerpt.substring(0, 80)}...</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                
+                {/* Requested Blogs Section */}
+                <div>
+                  <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#1A1400', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ background: '#F59E0B', color: '#FFF', padding: '2px 8px', borderRadius: '12px', fontSize: '14px' }}>New</span>
+                    Requested Experiences
+                  </h3>
+                  {loading ? <p>Loading...</p> : allBlogs.filter(b => b.status === 'pending').length === 0 ? <p style={{ color: '#666', fontStyle: 'italic' }}>No pending requests.</p> : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+                      {allBlogs.filter(b => b.status === 'pending').map(blog => (
+                        <div key={blog._id} style={{ background: '#FFF', padding: '16px', borderRadius: '12px', border: '2px solid #F59E0B', display: 'flex', gap: '16px', alignItems: 'center', position: 'relative' }}>
+                          {blog.image && <img src={blog.image} alt="blog" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />}
+                          <div style={{ flex: 1 }}>
+                            <h4 style={{ margin: '0 0 8px 0', color: '#1A1400' }}>{blog.title}</h4>
+                            <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '14px' }}>{blog.date} • By {blog.author}</p>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#333' }}>{blog.excerpt}</p>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <button onClick={() => handlePublishBlog(blog._id)} style={{ background: '#10B981', color: '#FFF', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Approve & Publish</button>
+                            <button onClick={() => handleDeleteBlog(blog._id)} style={{ background: 'rgba(220,38,38,0.1)', color: '#DC2626', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Delete</button>
+                          </div>
                         </div>
-                        <button onClick={() => handleDeleteBlog(blog._id)} style={{ background: 'rgba(220,38,38,0.1)', color: '#DC2626', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Delete</button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Published Blogs Section */}
+                <div>
+                  <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#1A1400' }}>Published Blogs</h3>
+                  {loading ? <p>Loading blogs...</p> : allBlogs.filter(b => b.status === 'published').length === 0 ? <p>No blogs published yet.</p> : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+                      {allBlogs.filter(b => b.status === 'published').map(blog => (
+                        <div key={blog._id} style={{ background: '#FFF', padding: '16px', borderRadius: '12px', border: '1px solid rgba(26, 20, 0, 0.1)', display: 'flex', gap: '16px', alignItems: 'center' }}>
+                          <img src={blog.image} alt="blog" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
+                          <div style={{ flex: 1 }}>
+                            <h4 style={{ margin: '0 0 8px 0', color: '#1A1400' }}>{blog.title}</h4>
+                            <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '14px' }}>{blog.date} • By {blog.author}</p>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#333' }}>{blog.excerpt.substring(0, 80)}...</p>
+                          </div>
+                          <button onClick={() => handleDeleteBlog(blog._id)} style={{ background: 'rgba(220,38,38,0.1)', color: '#DC2626', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Delete</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
               </div>
             </div>
           </div>

@@ -259,7 +259,7 @@ const Home = () => {
           </div>
           <div className="blogs-marquee-container fade-in-up" style={{ animationDelay: '0.2s' }}>
             <div className="blogs-marquee-track">
-              {[...blogsData, ...blogsData, ...blogsData, ...blogsData].map((blog, index) => (
+              {[...blogsData, ...blogsData, ...blogsData, ...blogsData].filter(blog => blog.status !== 'pending').map((blog, index) => (
                 <div
                   key={`${blog._id || 'blog'}-${index}`}
                   className="blog-card"
@@ -284,7 +284,7 @@ const Home = () => {
             <div className="blog-cta-card">
               <h3>Have a Cosmic Experience to Share?</h3>
               <p>Write your own blog about how Astro Dilip Sharma's predictions or remedies changed your life.</p>
-              <Link to="/contact" className="btn-primary">Write Your Experience</Link>
+              <Link to="/write-experience" className="btn-primary">Write Your Experience</Link>
             </div>
           </div>
         </ScrollReveal>

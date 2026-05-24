@@ -6,6 +6,7 @@ const blogSchema = new mongoose.Schema({
   date: { type: String, required: true },
   author: { type: String, required: true },
   image: { type: String, required: true },
+  status: { type: String, default: 'published' },
   createdAt: { type: Date, default: Date.now }
 });
 
