@@ -257,26 +257,27 @@ const Home = () => {
             <h2 className="blogs-title">Read Blogs from our Clients</h2>
             <p className="blogs-subtitle">Discover real experiences and life-changing stories from the people we have guided.</p>
           </div>
-          <div className="blogs-grid">
-            {blogsData.map((blog, index) => (
-              <div
-                key={blog._id || index}
-                className="blog-card fade-in-up"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="blog-image-wrapper">
-                  <img src={blog.image} alt={blog.title} className="blog-image" />
-                </div>
-                <div className="blog-content">
-                  <span className="blog-date">{blog.date}</span>
-                  <h3 className="blog-card-title">{blog.title}</h3>
-                  <p className="blog-excerpt">{blog.excerpt}</p>
-                  <div className="blog-author">
-                    <span className="author-name">- {blog.author}</span>
+          <div className="blogs-marquee-container fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <div className="blogs-marquee-track">
+              {[...blogsData, ...blogsData, ...blogsData, ...blogsData].map((blog, index) => (
+                <div
+                  key={`${blog._id || 'blog'}-${index}`}
+                  className="blog-card"
+                >
+                  <div className="blog-image-wrapper">
+                    <img src={blog.image} alt={blog.title} className="blog-image" />
+                  </div>
+                  <div className="blog-content">
+                    <span className="blog-date">{blog.date}</span>
+                    <h3 className="blog-card-title">{blog.title}</h3>
+                    <p className="blog-excerpt">{blog.excerpt}</p>
+                    <div className="blog-author">
+                      <span className="author-name">- {blog.author}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
           
           <div className="blog-cta-wrapper fade-in-up" style={{ animationDelay: '0.4s' }}>
