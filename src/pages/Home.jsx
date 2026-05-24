@@ -282,7 +282,7 @@ const Home = () => {
           
           <div className="blog-cta-wrapper fade-in-up" style={{ animationDelay: '0.4s' }}>
             <div className="blog-cta-card">
-              <h3>Have a Cosmic Experience to Share?</h3>
+              <h3>Have an Experience to Share?</h3>
               <p>Write your own blog about how Astro Dilip Sharma's predictions or remedies changed your life.</p>
               <Link to="/write-experience" className="btn-primary">Write Your Experience</Link>
             </div>

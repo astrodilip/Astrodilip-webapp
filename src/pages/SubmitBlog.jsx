@@ -69,7 +69,7 @@ const SubmitBlog = () => {
       <div className="container" style={{ maxWidth: '600px', margin: '0 auto' }}>
         <div className="blog-cta-card" style={{ textAlign: 'left', padding: '2rem' }}>
           <h2 style={{ fontSize: '2rem', marginBottom: '1rem', color: 'var(--text-main)', fontFamily: 'var(--font-serif)' }}>
-            Share Your Cosmic Experience
+            Share Your Experience
           </h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.5' }}>
             We would love to hear how Astro Dilip Sharma's guidance or remedies helped you. Submit your story below, and once approved, it will be published on our home page!
