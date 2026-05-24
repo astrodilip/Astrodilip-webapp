@@ -40,6 +40,10 @@ const Admin = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   
+  // Blog Tab States
+  const [allBlogs, setAllBlogs] = useState([]);
+  const [newBlog, setNewBlog] = useState({ title: '', excerpt: '', date: '', author: '', image: '' });
+  
   // User Tab States
   const [userSearch, setUserSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -140,6 +144,7 @@ const Admin = () => {
     if (activeTab === 'users') fetchUsers();
     if (activeTab === 'bookings') fetchBookings();
     if (activeTab === 'stats') fetchStats();
+    if (activeTab === 'blogs') fetchBlogs();
   }, [activeTab]);
 
   const fetchUsers = async () => {
@@ -178,6 +183,50 @@ const Admin = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchBlogs = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('https://astrodilip-webapp.onrender.com/api/blogs');
+      const data = await res.json();
+      setAllBlogs(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateBlog = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('https://astrodilip-webapp.onrender.com/api/blogs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newBlog)
+      });
+      if (res.ok) {
+        setNewBlog({ title: '', excerpt: '', date: '', author: '', image: '' });
+        fetchBlogs();
+        alert('Blog created successfully!');
+      } else {
+        alert('Error: The live server does not have the blog endpoints yet because we haven\'t pushed to GitHub!');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to create blog');
+    }
+  };
+
+  const handleDeleteBlog = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this blog?')) return;
+    try {
+      const res = await fetch(`https://astrodilip-webapp.onrender.com/api/blogs/${id}`, { method: 'DELETE' });
+      if (res.ok) fetchBlogs();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -461,6 +510,9 @@ const Admin = () => {
         </button>
         <button onClick={() => setActiveTab('bookings')} className="admin-tab" style={{ padding: '16px 8px', background: 'transparent', border: 'none', borderBottom: activeTab === 'bookings' ? '3px solid #FF6B00' : '3px solid transparent', color: activeTab === 'bookings' ? '#FF6B00' : '#1A1400', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', outline: 'none' }}>
           <Calendar size={18} /> Bookings
+        </button>
+        <button onClick={() => setActiveTab('blogs')} className="admin-tab" style={{ padding: '16px 8px', background: 'transparent', border: 'none', borderBottom: activeTab === 'blogs' ? '3px solid #FF6B00' : '3px solid transparent', color: activeTab === 'blogs' ? '#FF6B00' : '#1A1400', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', outline: 'none' }}>
+          <FileText size={18} /> Blogs
         </button>
         <button onClick={() => setActiveTab('stats')} className="admin-tab" style={{ padding: '16px 8px', background: 'transparent', border: 'none', borderBottom: activeTab === 'stats' ? '3px solid #FF6B00' : '3px solid transparent', color: activeTab === 'stats' ? '#FF6B00' : '#1A1400', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', outline: 'none' }}>
           <BarChart3 size={18} /> Stats
@@ -981,6 +1033,102 @@ const Admin = () => {
                 )}
               </>
             )}
+          </div>
+        )}
+
+        {/* === BLOGS TAB === */}
+        {activeTab === 'blogs' && (
+          <div className="admin-panel-content" style={{ padding: '24px', overflowY: 'auto', height: '100%' }}>
+            <h2 style={{ margin: '0 0 24px 0', color: '#1A1400' }}>Manage Blogs</h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
+              <div style={{ background: 'rgba(26, 20, 0, 0.05)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(26, 20, 0, 0.1)', height: 'fit-content' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#1A1400' }}>Add New Blog</h3>
+                <form onSubmit={handleCreateBlog} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ color: '#1A1400', fontSize: '14px', fontWeight: 'bold' }}>Blog Title:</label>
+                    <input type="text" placeholder="Enter title" value={newBlog.title} onChange={(e) => setNewBlog({...newBlog, title: e.target.value})} required style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ color: '#1A1400', fontSize: '14px', fontWeight: 'bold' }}>Blog Description:</label>
+                    <textarea placeholder="Enter short description" value={newBlog.excerpt} onChange={(e) => setNewBlog({...newBlog, excerpt: e.target.value})} required rows="4" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none', resize: 'vertical' }}></textarea>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ color: '#1A1400', fontSize: '14px', fontWeight: 'bold' }}>Date of Writing:</label>
+                    <input type="date" value={newBlog.date} onChange={(e) => setNewBlog({...newBlog, date: e.target.value})} required style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ color: '#1A1400', fontSize: '14px', fontWeight: 'bold' }}>Blog Written By:</label>
+                    <input type="text" placeholder="e.g. Astro Dilip Sharma" value={newBlog.author} onChange={(e) => setNewBlog({...newBlog, author: e.target.value})} required style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} />
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ color: '#1A1400', fontSize: '14px', fontWeight: 'bold' }}>Upload Blog Image:</label>
+                    <input 
+                      id="blog-image-upload"
+                      type="file" 
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            let result = reader.result;
+                            if (!result.startsWith('data:image/')) {
+                                const base64Data = result.split('base64,')[1];
+                                result = `data:image/jpeg;base64,${base64Data}`;
+                            }
+                            setNewBlog({...newBlog, image: result});
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }} 
+                      style={{ padding: '8px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} 
+                    />
+                    {newBlog.image && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+                        <img src={newBlog.image} alt="preview" style={{ height: '60px', objectFit: 'contain', borderRadius: '8px' }} />
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            setNewBlog({...newBlog, image: ''});
+                            const fileInput = document.getElementById('blog-image-upload');
+                            if (fileInput) fileInput.value = '';
+                          }}
+                          style={{ background: 'rgba(220,38,38,0.1)', color: '#DC2626', border: '1px solid #DC2626', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
+                        >
+                          Remove Image
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <button type="submit" style={{ background: '#FF6B00', color: '#1A1400', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>Publish Blog</button>
+                </form>
+              </div>
+
+              <div>
+                <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#1A1400' }}>Published Blogs</h3>
+                {loading ? <p>Loading blogs...</p> : allBlogs.length === 0 ? <p>No blogs published yet.</p> : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+                    {allBlogs.map(blog => (
+                      <div key={blog._id} style={{ background: '#FFF', padding: '16px', borderRadius: '12px', border: '1px solid rgba(26, 20, 0, 0.1)', display: 'flex', gap: '16px', alignItems: 'center' }}>
+                        <img src={blog.image} alt="blog" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ margin: '0 0 8px 0', color: '#1A1400' }}>{blog.title}</h4>
+                          <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '14px' }}>{blog.date} • By {blog.author}</p>
+                          <p style={{ margin: 0, fontSize: '13px', color: '#333' }}>{blog.excerpt.substring(0, 80)}...</p>
+                        </div>
+                        <button onClick={() => handleDeleteBlog(blog._id)} style={{ background: 'rgba(220,38,38,0.1)', color: '#DC2626', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Delete</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

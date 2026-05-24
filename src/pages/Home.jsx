@@ -73,9 +73,9 @@ const Home = () => {
     { id: 12, name: 'Pisces', icon: 'https://img.icons8.com/color/96/pisces.png' }
   ];
 
-  const blogsData = [
+  const [blogsData, setBlogsData] = useState([
     {
-      id: 1,
+      _id: 1,
       title: "Understanding Planetary Transits in 2026",
       excerpt: "Astro Dilip Sharma explains how the major transits of Saturn and Jupiter will impact your sun sign this year...",
       date: "May 15, 2026",
@@ -83,7 +83,7 @@ const Home = () => {
       image: "/courses/new-planetary transits.png"
     },
     {
-      id: 2,
+      _id: 2,
       title: "How Vastu Changed My Business",
       excerpt: "After struggling for years, applying simple Vastu remedies suggested by Astro Dilip transformed my workspace energy...",
       date: "May 10, 2026",
@@ -91,14 +91,29 @@ const Home = () => {
       image: "/courses/new-vastu.png"
     },
     {
-      id: 3,
+      _id: 3,
       title: "The Power of Lal Kitab Remedies",
       excerpt: "Why Lal Kitab is considered one of the most practical and effective branches of astrology in the modern era.",
       date: "May 2, 2026",
       author: "Astro Dilip Sharma",
       image: "/courses/new-lalkitab.jpg"
     }
-  ];
+  ]);
+
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        const res = await fetch('https://astrodilip-webapp.onrender.com/api/blogs');
+        const data = await res.json();
+        if (data && data.length > 0) {
+          setBlogsData(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch blogs", err);
+      }
+    };
+    fetchBlogs();
+  }, []);
 
   return (
     <div className="home-page">
@@ -245,7 +260,7 @@ const Home = () => {
           <div className="blogs-grid">
             {blogsData.map((blog, index) => (
               <div
-                key={blog.id}
+                key={blog._id || index}
                 className="blog-card fade-in-up"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >

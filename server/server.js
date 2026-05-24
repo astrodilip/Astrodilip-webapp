@@ -12,12 +12,14 @@ import crypto from 'crypto';
 import User from './models/User.js';
 import Message from './models/Message.js';
 import Booking from './models/Booking.js';
+import Blog from './models/Blog.js';
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const httpServer = createServer(app);
 
@@ -35,7 +37,20 @@ const io = new Server(httpServer, {
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB Connected'))
+  .then(async () => {
+    console.log('MongoDB Connected');
+    
+    // Auto-seed default blogs if empty
+    const blogCount = await Blog.countDocuments();
+    if (blogCount === 0) {
+      await Blog.insertMany([
+        { title: "Understanding Planetary Transits in 2026", excerpt: "Astro Dilip Sharma explains how the major transits of Saturn and Jupiter will impact your sun sign this year...", date: "May 15, 2026", author: "Astro Dilip Sharma", image: "/courses/new-planetary transits.png" },
+        { title: "How Vastu Changed My Business", excerpt: "After struggling for years, applying simple Vastu remedies suggested by Astro Dilip transformed my workspace energy...", date: "May 10, 2026", author: "Priya M. (Client Experience)", image: "/courses/new-vastu.png" },
+        { title: "The Power of Lal Kitab Remedies", excerpt: "Why Lal Kitab is considered one of the most practical and effective branches of astrology in the modern era.", date: "May 2, 2026", author: "Astro Dilip Sharma", image: "/courses/new-lalkitab.jpg" }
+      ]);
+      console.log('Default blogs seeded automatically.');
+    }
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Prevent Render free tier from sleeping
@@ -141,6 +156,34 @@ app.delete('/api/users/:id', async (req, res) => {
     res.status(200).json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+app.get('/api/blogs', async (req, res) => {
+  try {
+    const blogs = await Blog.find().sort({ createdAt: -1 });
+    res.status(200).json(blogs);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch blogs' });
+  }
+});
+
+app.post('/api/blogs', async (req, res) => {
+  try {
+    const newBlog = new Blog(req.body);
+    await newBlog.save();
+    res.status(201).json(newBlog);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create blog' });
+  }
+});
+
+app.delete('/api/blogs/:id', async (req, res) => {
+  try {
+    await Blog.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete blog' });
   }
 });
 
