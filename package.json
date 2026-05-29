@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "render-build": "npm install && vite build && cd server && npm install",
+    "render-start": "node server/server.js"
   },
   "dependencies": {
     "lucide-react": "^1.16.0",

@@ -8,6 +8,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import User from './models/User.js';
 import Message from './models/Message.js';
@@ -603,6 +608,12 @@ io.on('connection', (socket) => {
       activeUsers.delete(socket.id);
     }
   });
+});
+
+// Serve frontend in production (Single Deployment)
+app.use(express.static(path.join(__dirname, '../dist')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
